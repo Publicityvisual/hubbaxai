@@ -3,6 +3,7 @@ import type { ArtifactKind } from '@/components/artifact';
 import {
   deleteDocumentsByIdAfterTimestamp,
   getDocumentsById,
+  getChatById,
   saveDocument,
 } from '@/lib/db/queries';
 
@@ -14,25 +15,30 @@ export async function GET(request: Request) {
     return new Response('Missing id', { status: 400 });
   }
 
-  const session = await auth();
-
-  if (!session || !session.user) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
   const documents = await getDocumentsById({ id });
-
   const [document] = documents;
 
   if (!document) {
     return new Response('Not Found', { status: 404 });
   }
 
-  if (document.userId !== session.user.id) {
-    return new Response('Unauthorized', { status: 401 });
+  const session = await auth();
+
+  if (session?.user && document.userId === session.user.id) {
+    return Response.json(documents, { status: 200 });
   }
 
-  return Response.json(documents, { status: 200 });
+  const chat = await getChatById({ id: document.chatId });
+
+  if (!chat) {
+    return new Response('Not Found', { status: 404 });
+  }
+
+  if (chat.visibility === 'public') {
+    return Response.json(documents, { status: 200 });
+  }
+
+  return new Response('Unauthorized', { status: 401 });
 }
 
 export async function POST(request: Request) {
@@ -53,8 +59,13 @@ export async function POST(request: Request) {
     content,
     title,
     kind,
-  }: { content: string; title: string; kind: ArtifactKind } =
-    await request.json();
+    chatId,
+  }: { 
+    content: string; 
+    title: string; 
+    kind: ArtifactKind;
+    chatId: string;
+  } = await request.json();
 
   const documents = await getDocumentsById({ id: id });
 
@@ -72,6 +83,7 @@ export async function POST(request: Request) {
     title,
     kind,
     userId: session.user.id,
+    chatId,
   });
 
   return Response.json(document, { status: 200 });
@@ -97,7 +109,6 @@ export async function DELETE(request: Request) {
   }
 
   const documents = await getDocumentsById({ id });
-
   const [document] = documents;
 
   if (document.userId !== session.user.id) {

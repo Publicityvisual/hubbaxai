@@ -17,7 +17,7 @@ import {
   type DBMessage,
   Chat,
 } from './schema';
-import { ArtifactKind } from '@/components/artifact';
+import type { ArtifactKind } from '@/components/artifact';
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
@@ -233,12 +233,14 @@ export async function saveDocument({
   kind,
   content,
   userId,
+  chatId,
 }: {
   id: string;
   title: string;
   kind: ArtifactKind;
   content: string;
   userId: string;
+  chatId: string;
 }) {
   try {
     return await db.insert(document).values({
@@ -247,6 +249,7 @@ export async function saveDocument({
       kind,
       content,
       userId,
+      chatId,
       createdAt: new Date(),
     });
   } catch (error) {

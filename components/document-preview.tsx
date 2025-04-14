@@ -2,7 +2,7 @@
 
 import {
   memo,
-  MouseEvent,
+  type MouseEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -11,7 +11,7 @@ import {
 import { ArtifactKind, UIArtifact } from './artifact';
 import { FileIcon, FullscreenIcon, ImageIcon, LoaderIcon } from './icons';
 import { cn, fetcher } from '@/lib/utils';
-import { Document } from '@/lib/db/schema';
+import type { Document } from '@/lib/db/schema';
 import { InlineDocumentSkeleton } from './document-skeleton';
 import useSWR from 'swr';
 import { Editor } from './text-editor';
@@ -23,15 +23,15 @@ import { SpreadsheetEditor } from './sheet-editor';
 import { ImageEditor } from './image-editor';
 
 interface DocumentPreviewProps {
-  isReadonly: boolean;
   result?: any;
   args?: any;
+  chatId: string;
 }
 
 export function DocumentPreview({
-  isReadonly,
   result,
   args,
+  chatId,
 }: DocumentPreviewProps) {
   const { artifact, setArtifact } = useArtifact();
 
@@ -64,7 +64,7 @@ export function DocumentPreview({
         <DocumentToolResult
           type="create"
           result={{ id: result.id, title: result.title, kind: result.kind }}
-          isReadonly={isReadonly}
+          chatId={chatId}
         />
       );
     }
@@ -74,7 +74,7 @@ export function DocumentPreview({
         <DocumentToolCall
           type="create"
           args={{ title: args.title }}
-          isReadonly={isReadonly}
+          chatId={chatId}
         />
       );
     }
@@ -94,6 +94,7 @@ export function DocumentPreview({
           id: artifact.documentId,
           createdAt: new Date(),
           userId: 'noop',
+          chatId: artifact.chatId,
         }
       : null;
 
@@ -104,6 +105,7 @@ export function DocumentPreview({
       <HitboxLayer
         hitboxRef={hitboxRef}
         result={result}
+        chatId={chatId}
         setArtifact={setArtifact}
       />
       <DocumentHeader
@@ -145,12 +147,14 @@ const PureHitboxLayer = ({
   hitboxRef,
   result,
   setArtifact,
+  chatId,
 }: {
   hitboxRef: React.RefObject<HTMLDivElement>;
   result: any;
   setArtifact: (
     updaterFn: UIArtifact | ((currentArtifact: UIArtifact) => UIArtifact),
   ) => void;
+  chatId: string;
 }) => {
   const handleClick = useCallback(
     (event: MouseEvent<HTMLElement>) => {
@@ -165,6 +169,7 @@ const PureHitboxLayer = ({
               documentId: result.id,
               kind: result.kind,
               isVisible: true,
+              chatId,
               boundingBox: {
                 left: boundingBox.x,
                 top: boundingBox.y,
@@ -174,7 +179,7 @@ const PureHitboxLayer = ({
             },
       );
     },
-    [setArtifact, result],
+    [setArtifact, result, chatId],
   );
 
   return (

@@ -39,6 +39,7 @@ export type ArtifactKind = (typeof artifactDefinitions)[number]['kind'];
 export interface UIArtifact {
   title: string;
   documentId: string;
+  chatId: string;
   kind: ArtifactKind;
   content: string;
   isVisible: boolean;
@@ -146,6 +147,7 @@ function PureArtifact({
                 title: artifact.title,
                 content: updatedContent,
                 kind: artifact.kind,
+                chatId: artifact.chatId,
               }),
             });
 
@@ -194,7 +196,7 @@ function PureArtifact({
   }
 
   const handleVersionChange = (type: 'next' | 'prev' | 'toggle' | 'latest') => {
-    if (!documents) return;
+    if (!documents || isReadonly) return;
 
     if (type === 'latest') {
       setCurrentVersionIndex(documents.length - 1);
@@ -503,6 +505,7 @@ export const Artifact = memo(PureArtifact, (prevProps, nextProps) => {
   if (!equal(prevProps.votes, nextProps.votes)) return false;
   if (prevProps.input !== nextProps.input) return false;
   if (!equal(prevProps.messages, nextProps.messages.length)) return false;
+  if (prevProps.isReadonly !== nextProps.isReadonly) return false;
 
   return true;
 });
