@@ -1,13 +1,18 @@
 import type { NextAuthConfig } from 'next-auth';
 
 export const authConfig = {
+  trustHost: true, // <-- this is the fix
   pages: {
     signIn: '/login',
     newUser: '/',
   },
-  providers: [
-    // added later in auth.ts since it requires bcrypt which is only compatible with Node.js
-    // while this file is also used in non-Node.js environments
-  ],
+  providers: [],
   callbacks: {},
 } satisfies NextAuthConfig;
+
+// Log auth configuration on startup
+console.log('NextAuth Configuration:', {
+  trustHost: authConfig.trustHost,
+  pages: authConfig.pages,
+  baseUrl: process.env.NEXTAUTH_URL || 'not set',
+});

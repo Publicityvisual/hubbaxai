@@ -1,5 +1,6 @@
 import type { UserType } from '@/app/(auth)/auth';
-import type { ChatModel } from './models';
+import type { ChatModel } from './client-models';
+import { PROVIDERS } from './client-models';
 
 interface Entitlements {
   maxMessagesPerDay: number;
@@ -12,7 +13,7 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    */
   guest: {
     maxMessagesPerDay: 20,
-    availableChatModelIds: ['chat-model', 'chat-model-reasoning'],
+    availableChatModelIds: ['openai-gpt4o', 'xai-grok2'],
   },
 
   /*
@@ -20,7 +21,29 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    */
   regular: {
     maxMessagesPerDay: 100,
-    availableChatModelIds: ['chat-model', 'chat-model-reasoning'],
+    availableChatModelIds: [
+      // OpenAI Models
+      'openai-gpt4o',
+      'openai-gpt-4o',
+      'openai-o1',
+      'openai-o1-mini',
+      'openai-o1-preview',
+      'openai-o1-pro',
+      'openai-o3mini',
+      'openai-reasoning',
+      // xAI models
+      'xai-grok2',
+      'xai-grok2-vision',
+      'xai-grok3-mini',
+      // Add generic patterns for each provider to allow all models from that provider
+      `${PROVIDERS.OPENAI}-`,
+      `${PROVIDERS.XAI}-`,
+      `${PROVIDERS.ANTHROPIC}-`,
+      `${PROVIDERS.GOOGLE}-`,
+      `${PROVIDERS.MISTRAL}-`,
+      `${PROVIDERS.GROQ}-`,
+      `${PROVIDERS.COHERE}-`,
+    ],
   },
 
   /*

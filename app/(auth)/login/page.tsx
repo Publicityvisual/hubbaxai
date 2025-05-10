@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useActionState, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from '@/components/toast';
 
 import { AuthForm } from '@/components/auth-form';
 import { SubmitButton } from '@/components/submit-button';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 import { login, type LoginActionState } from '../actions';
 import { useSession } from 'next-auth/react';
@@ -16,37 +18,98 @@ export default function Page() {
 
   const [email, setEmail] = useState('');
   const [isSuccessful, setIsSuccessful] = useState(false);
-
-  const [state, formAction] = useActionState<LoginActionState, FormData>(
-    login,
-    {
-      status: 'idle',
-    },
-  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [state, setState] = useState<LoginActionState>({
+    status: 'idle',
+  });
 
   const { update: updateSession } = useSession();
 
   useEffect(() => {
-    if (state.status === 'failed') {
+    console.log('Login page state changed:', state.status);
+    if (state.status === 'in_progress') {
+      setIsLoading(true);
+      setErrorMessage(null);
+    } else if (state.status === 'failed') {
+      console.log('Login failed, showing error message');
+      setIsLoading(false);
+      setErrorMessage(
+        'Invalid credentials. Please check your email and password.',
+      );
       toast({
         type: 'error',
         description: 'Invalid credentials!',
       });
     } else if (state.status === 'invalid_data') {
+      console.log('Invalid data submitted, showing error message');
+      setIsLoading(false);
+      setErrorMessage(
+        'Please enter a valid email and password (min 6 characters).',
+      );
       toast({
         type: 'error',
         description: 'Failed validating your submission!',
       });
     } else if (state.status === 'success') {
+      console.log('Login successful, starting session update');
       setIsSuccessful(true);
-      updateSession();
-      router.refresh();
-    }
-  }, [state.status]);
+      // Update session then redirect to home page
 
-  const handleSubmit = (formData: FormData) => {
-    setEmail(formData.get('email') as string);
-    formAction(formData);
+      // Add a timeout to prevent infinite loading
+      const sessionUpdatePromise = updateSession();
+      console.log('updateSession() called, waiting for response...');
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          console.log('Session update timed out after 10 seconds');
+          reject(new Error('Session update timed out'));
+        }, 10000);
+      });
+
+      Promise.race([sessionUpdatePromise, timeoutPromise])
+        .then(() => {
+          console.log(
+            'Session update completed successfully, redirecting to home',
+          );
+          router.push('/'); // Redirect to home page after successful login
+        })
+        .catch((error: Error) => {
+          console.error('Failed to update session:', error, error.stack);
+          setIsLoading(false);
+          setErrorMessage(
+            error.message === 'Session update timed out'
+              ? 'Login timed out. Please try again.'
+              : 'Login succeeded but session update failed. Please try again.',
+          );
+          toast({
+            type: 'error',
+            description:
+              error.message === 'Session update timed out'
+                ? 'Login timed out. Please try again.'
+                : 'Login succeeded but session update failed. Please try again.',
+          });
+        });
+    }
+  }, [state.status, router, updateSession]);
+
+  const handleSubmit = async (formData: FormData) => {
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    console.log(
+      `Login attempt for email: ${email}, password: ${password ? '********' : 'empty'}`,
+    );
+
+    setEmail(email);
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    // Set in progress status
+    setState({ status: 'in_progress' });
+    console.log('Calling login action...');
+
+    const result = await login(formData);
+    console.log('Login action returned:', result);
+    setState(result);
   };
 
   return (
@@ -58,8 +121,18 @@ export default function Page() {
             Use your email and password to sign in
           </p>
         </div>
+
+        {errorMessage && (
+          <Alert variant="destructive" className="mx-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+
         <AuthForm action={handleSubmit} defaultEmail={email}>
-          <SubmitButton isSuccessful={isSuccessful}>Sign in</SubmitButton>
+          <SubmitButton isSuccessful={isSuccessful}>
+            {isLoading ? 'Signing in...' : 'Sign in'}
+          </SubmitButton>
           <p className="text-center text-sm text-gray-600 mt-4 dark:text-zinc-400">
             {"Don't have an account? "}
             <Link

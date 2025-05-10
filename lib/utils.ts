@@ -77,3 +77,55 @@ export function getTrailingMessageId({
 export function sanitizeText(text: string) {
   return text.replace('<has_function_call>', '');
 }
+
+/**
+ * Generates a random password with the specified length
+ * @param length The length of the password to generate
+ * @returns A randomly generated password
+ */
+export function generateRandomPassword(length: number): string {
+  const uppercaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercaseChars = 'abcdefghijklmnopqrstuvwxyz';
+  const numberChars = '0123456789';
+  const specialChars = '!@#$%^&*()-_=+';
+
+  const allChars = uppercaseChars + lowercaseChars + numberChars + specialChars;
+
+  // Ensure at least one character from each category
+  let password =
+    uppercaseChars.charAt(Math.floor(Math.random() * uppercaseChars.length)) +
+    lowercaseChars.charAt(Math.floor(Math.random() * lowercaseChars.length)) +
+    numberChars.charAt(Math.floor(Math.random() * numberChars.length)) +
+    specialChars.charAt(Math.floor(Math.random() * specialChars.length));
+
+  // Add remaining random characters
+  for (let i = 4; i < length; i++) {
+    password += allChars.charAt(Math.floor(Math.random() * allChars.length));
+  }
+
+  // Shuffle the password
+  return password
+    .split('')
+    .sort(() => Math.random() - 0.5)
+    .join('');
+}
+
+/**
+ * Gets the absolute URL for an API endpoint
+ * Works in both client and server contexts
+ */
+export function getAbsoluteUrl(path: string): string {
+  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
+    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
+  // Remove trailing slash from baseUrl if it exists
+  const formattedBaseUrl = baseUrl.endsWith('/')
+    ? baseUrl.slice(0, -1)
+    : baseUrl;
+
+  // Ensure path starts with a slash
+  const formattedPath = path.startsWith('/') ? path : `/${path}`;
+
+  return `${formattedBaseUrl}${formattedPath}`;
+}
