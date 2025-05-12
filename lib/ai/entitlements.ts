@@ -1,9 +1,9 @@
 import type { UserType } from '@/app/(auth)/auth';
-import type { ChatModel } from './models';
+import type { ModelConfig } from '../types';
 
 interface Entitlements {
   maxMessagesPerDay: number;
-  availableChatModelIds: Array<ChatModel['id']>;
+  availableChatModelIds: Array<string>; // Using string type directly for model IDs
 }
 
 export const entitlementsByUserType: Record<UserType, Entitlements> = {
@@ -12,7 +12,7 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    */
   guest: {
     maxMessagesPerDay: 20,
-    availableChatModelIds: ['chat-model', 'chat-model-reasoning'],
+    availableChatModelIds: ['grok-chat', 'grok-reasoning', 'gemini-quantum', 'gemini-vision-pro', 'gemini-flash'],
   },
 
   /*
@@ -20,7 +20,7 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    */
   regular: {
     maxMessagesPerDay: 100,
-    availableChatModelIds: ['chat-model', 'chat-model-reasoning'],
+    availableChatModelIds: ['grok-chat', 'grok-reasoning', 'gemini-quantum', 'gemini-vision-pro', 'gemini-flash'],
   },
 
   /*
